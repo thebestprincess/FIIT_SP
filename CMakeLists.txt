@@ -15,7 +15,11 @@ FetchContent_Declare(
         URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip)
 FetchContent_MakeAvailable(googletest)
 
-find_package(Boost COMPONENTS system container REQUIRED) # Ставить через vcpkg
+if(POLICY CMP0167)
+    cmake_policy(SET CMP0167 NEW)
+endif()
+
+find_package(Boost COMPONENTS container REQUIRED) # Ставить через vcpkg
 
 add_subdirectory(allocator)
 add_subdirectory(associative_container)
