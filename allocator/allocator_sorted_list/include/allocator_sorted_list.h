@@ -29,10 +29,10 @@ public:
             allocator_with_fit_mode::fit_mode allocate_fit_mode = allocator_with_fit_mode::fit_mode::first_fit);
     
     allocator_sorted_list(
-        allocator_sorted_list const &other);
+        allocator_sorted_list const &other) = delete;
     
     allocator_sorted_list &operator=(
-        allocator_sorted_list const &other);
+        allocator_sorted_list const &other) = delete;
 
     allocator_sorted_list(
         allocator_sorted_list &&other) noexcept;
@@ -56,6 +56,18 @@ private:
         allocator_with_fit_mode::fit_mode mode) override;
 
     std::vector<allocator_test_utils::block_info> get_blocks_info() const noexcept override;
+
+private:
+
+    struct search_result
+    {
+        void* prev_block;
+        void* target_block;
+    };
+
+    search_result find_first_fit(size_t size) const;
+    search_result find_best_fit(size_t size) const;
+    search_result find_worst_fit(size_t size) const;
 
 private:
 
