@@ -18,7 +18,6 @@ TEST(allocatorRBTPositiveTests, test1)
 	alloc->deallocate(second_block, 1);
 	alloc->deallocate(first_block, 1);
 	alloc->deallocate(third_block, 1);
-
 }
 
 TEST(allocatorRBTPositiveTests, test5)

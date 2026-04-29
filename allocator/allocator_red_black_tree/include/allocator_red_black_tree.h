@@ -6,12 +6,21 @@
 #include <allocator_with_fit_mode.h>
 #include <mutex>
 
+
+namespace rb_tree_utils
+{
+    constexpr size_t align_size(size_t size) noexcept
+    { 
+        return (size + sizeof(void*) - 1) & ~(sizeof(void*) - 1); 
+    }
+}
+
+
 class allocator_red_black_tree final:
     public smart_mem_resource,
     public allocator_test_utils,
     public allocator_with_fit_mode
 {
-
 private:
 
     enum class block_color : unsigned char
@@ -33,11 +42,9 @@ public:
     
     ~allocator_red_black_tree() override;
     
-    allocator_red_black_tree(
-        allocator_red_black_tree const &other);
+    allocator_red_black_tree(allocator_red_black_tree const &other);
     
-    allocator_red_black_tree &operator=(
-        allocator_red_black_tree const &other);
+    allocator_red_black_tree &operator=(allocator_red_black_tree const &other) = delete;
     
     allocator_red_black_tree(
         allocator_red_black_tree &&other) noexcept;
@@ -51,6 +58,65 @@ public:
             size_t space_size,
             std::pmr::memory_resource *parent_allocator = nullptr,
             allocator_with_fit_mode::fit_mode allocate_fit_mode = allocator_with_fit_mode::fit_mode::first_fit);
+
+
+private:
+
+    static constexpr size_t alloc_parent_offset = 0;
+    static constexpr size_t alloc_space_size_offset = rb_tree_utils::align_size(alloc_parent_offset + sizeof(std::pmr::memory_resource*));
+    static constexpr size_t alloc_root_offset = rb_tree_utils::align_size(alloc_space_size_offset + sizeof(size_t));
+    static constexpr size_t alloc_mutex_offset = rb_tree_utils::align_size(alloc_root_offset + sizeof(void*));
+    static constexpr size_t alloc_fit_mode_offset = rb_tree_utils::align_size(alloc_mutex_offset + sizeof(std::mutex));
+    
+    static constexpr size_t ALIGNED_ALLOC_META_SIZE = rb_tree_utils::align_size(alloc_fit_mode_offset + sizeof(allocator_with_fit_mode::fit_mode));
+
+    static constexpr size_t block_data_offset = 0;
+    static constexpr size_t block_size_offset = rb_tree_utils::align_size(block_data_offset + sizeof(block_data));
+    static constexpr size_t block_prev_phys_offset = rb_tree_utils::align_size(block_size_offset + sizeof(size_t));
+    
+    static constexpr size_t block_allocator_ptr_offset = rb_tree_utils::align_size(block_prev_phys_offset + sizeof(void*));
+    static constexpr size_t ALIGNED_OCCUPIED_META_SIZE = rb_tree_utils::align_size(block_allocator_ptr_offset + sizeof(void*));
+
+    static constexpr size_t block_parent_offset = rb_tree_utils::align_size(block_prev_phys_offset + sizeof(void*));
+    static constexpr size_t block_left_offset = rb_tree_utils::align_size(block_parent_offset + sizeof(void*));
+    static constexpr size_t block_right_offset = rb_tree_utils::align_size(block_left_offset + sizeof(void*));
+    static constexpr size_t ALIGNED_FREE_META_SIZE = rb_tree_utils::align_size(block_right_offset + sizeof(void*));
+
+    static std::pmr::memory_resource** get_parent_allocator_ptr(void* trusted) noexcept;
+    static size_t* get_space_size_ptr(void* trusted) noexcept;
+    static void** get_tree_root_ptr(void* trusted) noexcept;
+    static std::mutex* get_mutex_ptr(void* trusted) noexcept;
+    static allocator_with_fit_mode::fit_mode* get_fit_mode_ptr(void* trusted) noexcept;
+
+    static block_data* get_block_data_ptr(void* header) noexcept;
+    static size_t* get_block_size_ptr(void* header) noexcept;
+    static void** get_prev_physical_ptr(void* header) noexcept;
+    
+    static void** get_allocator_ptr(void* header) noexcept;
+    static void** get_parent_ptr(void* header) noexcept;
+    static void** get_left_ptr(void* header) noexcept;
+    static void** get_right_ptr(void* header) noexcept;
+    
+    static void* get_block_payload_ptr(void* header) noexcept;
+
+private:
+
+    static void set_color(void* node, block_color color) noexcept;
+    static block_color get_color(void* node) noexcept;
+    static void rotate_left(void* trusted, void* node) noexcept;
+    static void rotate_right(void* trusted, void* node) noexcept;
+    static void transplant(void* trusted, void* old_node, void* new_node) noexcept;
+    static void* get_min_node(void* node) noexcept;
+    static void insert_node(void* trusted, void* new_node) noexcept;
+    static void insert_fixup(void* trusted, void* node) noexcept;
+    static void remove_node(void* trusted, void* target_node) noexcept;
+    static void remove_fixup(void* trusted, void* current_node, void* parent_node) noexcept;    
+
+private:
+
+    static void* find_first_fit(void* trusted, size_t size);
+    static void* find_best_fit(void* trusted, size_t size);
+    static void* find_worst_fit(void* trusted, size_t size);
 
 private:
     
