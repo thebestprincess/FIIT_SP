@@ -24,13 +24,24 @@ private:
 
     void *_trusted_memory;
 
+private:
+
+    struct search_result {
+        void* prev_block;
+        void* target_block;
+    };
+
+    search_result find_first_fit(size_t size) const;
+    search_result find_best_fit(size_t size) const;
+    search_result find_worst_fit(size_t size) const;
+
 public:
     
     ~allocator_boundary_tags() override;
     
-    allocator_boundary_tags(allocator_boundary_tags const &other);
+    allocator_boundary_tags(allocator_boundary_tags const &other) = delete;
     
-    allocator_boundary_tags &operator=(allocator_boundary_tags const &other);
+    allocator_boundary_tags &operator=(allocator_boundary_tags const &other) = delete;
     
     allocator_boundary_tags(
         allocator_boundary_tags &&other) noexcept;
