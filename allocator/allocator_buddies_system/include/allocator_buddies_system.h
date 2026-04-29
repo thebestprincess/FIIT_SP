@@ -46,9 +46,13 @@ private:
 
     void *_trusted_memory;
 
-    /**
-     * TODO: You must improve it for alignment support
-     */
+    static std::pmr::memory_resource** get_parent_allocator_ptr(void* trusted_memory);
+    static std::mutex* get_mutex_ptr(void* trusted_memory);
+    static allocator_with_fit_mode::fit_mode* get_fit_mode_ptr(void* trusted_memory);
+    static unsigned char* get_total_k_ptr(void* trusted_memory);
+    static void* get_block_payload_ptr(void* block_header);
+    static void* get_header_from_payload(void* payload);
+    static void** get_allocator_ptr(void* block_header);
 
     static constexpr const size_t allocator_metadata_size = sizeof(allocator_dbg_helper*) + sizeof(fit_mode) + sizeof(unsigned char) + sizeof(std::mutex);
 
@@ -65,11 +69,9 @@ public:
             std::pmr::memory_resource *parent_allocator = nullptr,
             allocator_with_fit_mode::fit_mode allocate_fit_mode = allocator_with_fit_mode::fit_mode::first_fit);
 
-    allocator_buddies_system(
-        allocator_buddies_system const &other);
+    allocator_buddies_system(allocator_buddies_system const &other) = delete;
     
-    allocator_buddies_system &operator=(
-        allocator_buddies_system const &other);
+    allocator_buddies_system &operator=(allocator_buddies_system const &other) = delete;
     
     allocator_buddies_system(
         allocator_buddies_system &&other) noexcept;
@@ -140,4 +142,4 @@ private:
     
 };
 
-#endif //MATH_PRACTICE_AND_OPERATING_SYSTEMS_ALLOCATOR_ALLOCATOR_BUDDIES_SYSTEM_H
+#endif // MATH_PRACTICE_AND_OPERATING_SYSTEMS_ALLOCATOR_ALLOCATOR_BUDDIES_SYSTEM_H
